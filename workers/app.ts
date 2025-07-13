@@ -1,7 +1,16 @@
 import { Hono } from "hono";
 import { createRequestHandler } from "react-router";
 
-const app = new Hono();
+type Bindings = {
+  DB: D1Database;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
+
+app.get("/api/runners", async (c) => {
+  const { results } = await c.env.DB.prepare("SELECT * FROM runners").all();
+  return c.json(results);
+});
 
 // Add more routes here
 
