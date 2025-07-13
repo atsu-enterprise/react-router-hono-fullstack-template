@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -14,18 +15,37 @@ const customIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+interface Location {
+  id: number;
+  title: string;
+  summary: string;
+  latitude: number;
+  longitude: number;
+}
+
 export default function Map() {
+  const [locations, setLocations] = useState<Location[]>([]);
+
+  useEffect(() => {
+    fetch('/api/locations')
+      .then(res => res.json())
+      .then(data => setLocations(data));
+  }, []);
+
   return (
     <MapContainer center={[41.77583, 140.73667]} zoom={13} scrollWheelZoom={false} style={{ height: '100vh', width: '100%' }}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Marker position={[41.77379, 140.72619]} icon={customIcon}>
-        <Popup>
-          函館駅
-        </Popup>
-      </Marker>
+      {locations.map(location => (
+        <Marker key={location.id} position={[location.latitude, location.longitude]} icon={customIcon}>
+          <Popup>
+            <b>{location.title}</b><br />
+            {location.summary}
+          </Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 }
