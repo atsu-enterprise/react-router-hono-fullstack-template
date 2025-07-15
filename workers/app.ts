@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import { createRequestHandler } from "react-router";
+import { drizzle } from 'drizzle-orm/d1';
+import * as schema from '../app/db/schema';
 import firstAid from "./data/firstAid";
 import gate from "./data/gate";
 import aid from "./data/aid";
@@ -13,14 +15,16 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.get("/api/runners", async (c) => {
-  const { results } = await c.env.DB.prepare("SELECT * FROM runners").all();
-  return c.json(results);
+  const db = drizzle(c.env.DB, { schema });
+  const result = await db.query.runners.findMany();
+  return c.json(result);
 });
 
 app.get("/api/locations", async (c) => {
   try {
-    const { results } = await c.env.DB.prepare("SELECT * FROM locations").all();
-    return c.json(results);
+    const db = drizzle(c.env.DB, { schema });
+    const result = await db.query.locations.findMany();
+    return c.json(result);
   } catch (e) {
     console.error(e);
     return c.json({ error: "Failed to fetch locations" }, 500);

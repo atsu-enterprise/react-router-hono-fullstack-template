@@ -17,11 +17,12 @@ L.Icon.Default.mergeOptions({
 
 interface Location {
   id: number;
-  title: string;
+  bibsNumber: string;
   summary: string;
   latitude: number;
   longitude: number;
   status?: string; // Add status for dynamic icons
+  result?: string;
 }
 
 export default function Map() {
@@ -97,75 +98,108 @@ export default function Map() {
   };
 
   return (
-    <MapContainer center={[41.77583, 140.73667]} zoom={13} style={{ height: '100vh', width: '100%' }}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <div style={{ position: 'relative', height: '100vh', width: '100%' }}>
+      <MapContainer center={[41.77583, 140.73667]} zoom={13} style={{ height: '100%', width: '100%' }}>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
 
+        {locations.map(location => (
+          <Marker
+            key={location.id}
+            position={[location.latitude, location.longitude]}
+            icon={statusIcons[location.status as keyof typeof statusIcons] || statusIcons.closed}
+          >
+            <Popup>
+              <b>{location.bibsNumber}</b><br />{location.summary}<br />{location.result}
+            </Popup>
+          </Marker>
+        ))}
 
+        <LayersControl position="topright" collapsed={false}>
+          <LayersControl.Overlay name="救護所">
+            <LayerGroup>
+              {firstAidGeoJSON && (
+                <GeoJSON
+                  data={firstAidGeoJSON}
+                  pointToLayer={(feature, latlng) => L.marker(latlng, { icon: medicalIcon })}
+                  onEachFeature={onEachFeature}
+                />
+              )}
+            </LayerGroup>
+          </LayersControl.Overlay>
 
-      <LayersControl position="topright" collapsed={false}>
-        <LayersControl.Overlay name="救護所">
-          <LayerGroup>
-            {firstAidGeoJSON && (
-              <GeoJSON
-                data={firstAidGeoJSON}
-                pointToLayer={(feature, latlng) => L.marker(latlng, { icon: medicalIcon })}
-                onEachFeature={onEachFeature}
-              />
-            )}
-          </LayerGroup>
-        </LayersControl.Overlay>
+          <LayersControl.Overlay name="関門">
+            <LayerGroup>
+              {gateGeoJSON && (
+                <GeoJSON
+                  data={gateGeoJSON}
+                  pointToLayer={(feature, latlng) => L.marker(latlng, { icon: timerOffIcon })}
+                  onEachFeature={onEachFeature}
+                />
+              )}
+            </LayerGroup>
+          </LayersControl.Overlay>
 
-        <LayersControl.Overlay name="関門">
-          <LayerGroup>
-            {gateGeoJSON && (
-              <GeoJSON
-                data={gateGeoJSON}
-                pointToLayer={(feature, latlng) => L.marker(latlng, { icon: timerOffIcon })}
-                onEachFeature={onEachFeature}
-              />
-            )}
-          </LayerGroup>
-        </LayersControl.Overlay>
+          <LayersControl.Overlay name="エイド">
+            <LayerGroup>
+              {aidGeoJSON && (
+                <GeoJSON
+                  data={aidGeoJSON}
+                  pointToLayer={(feature, latlng) => L.marker(latlng, { icon: waterIcon })}
+                  onEachFeature={onEachFeature}
+                />
+              )}
+            </LayerGroup>
+          </LayersControl.Overlay>
 
-        <LayersControl.Overlay name="エイド">
-          <LayerGroup>
-            {aidGeoJSON && (
-              <GeoJSON
-                data={aidGeoJSON}
-                pointToLayer={(feature, latlng) => L.marker(latlng, { icon: waterIcon })}
-                onEachFeature={onEachFeature}
-              />
-            )}
-          </LayerGroup>
-        </LayersControl.Overlay>
+          <LayersControl.Overlay name="AED">
+            <LayerGroup>
+              {aedGeoJSON && (
+                <GeoJSON
+                  data={aedGeoJSON}
+                  pointToLayer={(feature, latlng) => L.marker(latlng, { icon: aedIcon })}
+                  onEachFeature={onEachFeature}
+                />
+              )}
+            </LayerGroup>
+          </LayersControl.Overlay>
 
-        <LayersControl.Overlay name="AED">
-          <LayerGroup>
-            {aedGeoJSON && (
-              <GeoJSON
-                data={aedGeoJSON}
-                pointToLayer={(feature, latlng) => L.marker(latlng, { icon: aedIcon })}
-                onEachFeature={onEachFeature}
-              />
-            )}
-          </LayerGroup>
-        </LayersControl.Overlay>
-
-        <LayersControl.Overlay checked name="コース">
-          <LayerGroup>
-            {courseGeoJSON && (
-              <GeoJSON
-                data={courseGeoJSON}
-                style={onEachColor}
-                onEachFeature={onEachFeature}
-              />
-            )}
-          </LayerGroup>
-        </LayersControl.Overlay>
-      </LayersControl>
-    </MapContainer>
+          <LayersControl.Overlay checked name="コース">
+            <LayerGroup>
+              {courseGeoJSON && (
+                <GeoJSON
+                  data={courseGeoJSON}
+                  style={onEachColor}
+                  onEachFeature={onEachFeature}
+                />
+              )}
+            </LayerGroup>
+          </LayersControl.Overlay>
+        </LayersControl>
+      </MapContainer>
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        zIndex: 1000,
+        backgroundColor: 'white',
+        padding: '10px',
+        borderRadius: '5px',
+        maxHeight: '400px',
+        overflowY: 'auto',
+        width: '250px'
+      }}>
+        <h2>Locations</h2>
+        <ul>
+          {locations.map(location => (
+            <li key={location.id}>
+              <strong>{location.bibsNumber}</strong> ({location.status}) {location.result && ` - ${location.result}`}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
