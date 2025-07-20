@@ -31,6 +31,25 @@ app.get("/api/locations", async (c) => {
   }
 });
 
+app.post("/api/locations", async (c) => {
+  const db = drizzle(c.env.DB, { schema });
+  const { bibsNumber, summary, latitude, longitude, status, result } = await c.req.json();
+  try {
+    const newLocation = await db.insert(schema.locations).values({
+      bibsNumber,
+      summary,
+      latitude,
+      longitude,
+      status,
+      result,
+    }).returning();
+    return c.json(newLocation);
+  } catch (e) {
+    console.error(e);
+    return c.json({ error: "Failed to create location" }, 500);
+  }
+});
+
 app.get("/api/geojson/firstAid", (c) => c.json(firstAid));
 app.get("/api/geojson/gate", (c) => c.json(gate));
 app.get("/api/geojson/aid", (c) => c.json(aid));

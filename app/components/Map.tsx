@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON, LayersControl, LayerGroup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, LayersControl, LayerGroup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import type { LeafletMouseEvent } from 'leaflet';
 import 'leaflet-iconmaterial'; // Import the plugin
 
 // Default Leaflet icon fix (still needed for base markers if not using custom icons everywhere)
@@ -9,6 +10,9 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // Move L.Icon.Default.mergeOptions to the top-level
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   iconRetinaUrl: markerIcon2x,
@@ -25,7 +29,22 @@ interface Location {
   result?: string;
 }
 
-export default function Map() {
+interface MapProps {
+  onMapClick?: (event: LeafletMouseEvent) => void;
+  clickedPosition?: [number, number] | null;
+  refreshKey?: number;
+}
+
+const MapEvents = ({ onMapClick }: { onMapClick?: (event: LeafletMouseEvent) => void }) => {
+  useMapEvents({
+    click(e) {
+      onMapClick?.(e);
+    },
+  });
+  return null;
+};
+
+export default function Map({ onMapClick, clickedPosition, refreshKey }: MapProps) {
   const [firstAidGeoJSON, setFirstAidGeoJSON] = useState<any>(null);
   const [gateGeoJSON, setGateGeoJSON] = useState<any>(null);
   const [aidGeoJSON, setAidGeoJSON] = useState<any>(null);
@@ -48,7 +67,7 @@ export default function Map() {
     fetch('/api/geojson/aed').then(res => res.json()).then(setAedGeoJSON);
     fetch('/api/geojson/course').then(res => res.json()).then(setCourseGeoJSON);
 
-  }, []);
+  }, [refreshKey]);
 
   // Function to create Material Icon (memoized)
   const createMaterialIcon = useMemo(() => (iconName: string, iconColor: string, markerColor: string) => {
@@ -98,8 +117,9 @@ export default function Map() {
   };
 
   return (
-    <div style={{ position: 'relative', height: '100vh', width: '100%' }}>
+    <div style={{ height: '100%', width: '100%' }}>
       <MapContainer center={[41.77583, 140.73667]} zoom={13} style={{ height: '100%', width: '100%' }}>
+        <MapEvents onMapClick={onMapClick} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -116,6 +136,12 @@ export default function Map() {
             </Popup>
           </Marker>
         ))}
+
+        {clickedPosition && (
+          <Marker position={clickedPosition}>
+            <Popup>You clicked here</Popup>
+          </Marker>
+        )}
 
         <LayersControl position="topright" collapsed={false}>
           <LayersControl.Overlay name="救護所">

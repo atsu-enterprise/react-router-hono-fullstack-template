@@ -1,5 +1,6 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -38,8 +39,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
-        {children}
+      <body className="flex flex-col min-h-screen">
+        <nav className="flex items-center justify-between p-4 bg-gray-800 text-white" style={{height: '60px'}}>
+          <Link to="/" className="text-xl font-bold">Runner Tracker</Link>
+          <div>
+            <Link to="/" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Home</Link>
+            <Link to="/map" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Map</Link>
+          </div>
+        </nav>
+        <main className="flex-grow">
+          {children}
+        </main>
         <ScrollRestoration />
         <Scripts />
       </body>
